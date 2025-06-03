@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-spgcrm-dev-8ea00-authRole",
+      "UnauthRoleArn": "arn:aws:iam::767397843884:role/amplify-spgcrm-dev-8ea00-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::767397843884:role/amplify-spgcrm-dev-8ea00-authRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-spgcrm-dev-8ea00-deployment",
+      "UnauthRoleName": "amplify-spgcrm-dev-8ea00-unauthRole",
+      "StackName": "amplify-spgcrm-dev-8ea00",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:767397843884:stack/amplify-spgcrm-dev-8ea00/13021b50-404d-11f0-bd4f-060c5fd2ed99",
+      "AmplifyAppId": "d1qdwyfv7o6oft"
+    },
+    "categories": {
+      "api": {
+        "spgcrm": {}
+      }
+    }
+  }
+}
