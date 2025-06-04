@@ -1,5 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { listCustomers } from './graphql/queries';
+
+// ここにAppSyncのエンドポイントURL（あなたの場合は↓このURL）
+const APPSYNC_ENDPOINT = 'https://55d7mvotbfb4ldlwsrknxsnmci.appsync-api.ap-northeast-1.amazonaws.com/graphql';
+// ここにAPIキーを貼り付け（例: 'da2-xxxxxxxxxxxxxxxxxxxxxxxxxx'）
+const APPSYNC_API_KEY = 'da2-7oig6dbgezb7tl4pxd62gne7oe';
+
+// GraphQLクエリ
+const listCustomers = `
+  query ListCustomers {
+    listCustomers {
+      items {
+        id
+        name
+        nameKana
+        zip
+        address
+        phone
+        fax
+        mobile1
+        mobile2
+        email1
+        email2
+        memo
+      }
+    }
+  }
+`;
 
 interface Customer {
   id: string;
@@ -23,16 +49,19 @@ const CustomerList: React.FC = () => {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const resp = await fetch('/graphql', {
+      const resp = await fetch(APPSYNC_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: listCustomers,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': APPSYNC_API_KEY,
+        },
+        body: JSON.stringify({ query: listCustomers }),
       });
       const json = await resp.json();
-      if (json.data && json.data.listCustomers) {
+      if (json.data && json.data.listCustomers && json.data.listCustomers.items) {
         setCustomers(json.data.listCustomers.items);
+      } else {
+        setCustomers([]);
       }
     } catch (err) {
       console.error(err);
@@ -44,6 +73,7 @@ const CustomerList: React.FC = () => {
 
   useEffect(() => {
     fetchCustomers();
+    // eslint-disable-next-line
   }, []);
 
   return (
