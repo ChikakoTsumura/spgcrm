@@ -6,8 +6,8 @@ const APPSYNC_API_KEY = 'da2-7oig6dbgezb7tl4pxd62gne7oe';
 
 // --- GraphQLクエリ ---
 const listBukkensByCustomer = `
-  query bukkensByCustomer($customerId: ID!) {
-    bukkensByCustomer(customerId: $customerId) {
+  query bukkensByCustomerId($customerId: ID!) {
+    bukkensByCustomerId(customerId: $customerId) {
       items {
         id
         bukkenNo
@@ -36,7 +36,14 @@ const createBukken = `
   }
 `;
 
-// disabledを含めて取得
+const updateBukken = `
+  mutation UpdateBukken($input: UpdateBukkenInput!) {
+    updateBukken(input: $input) {
+      id
+    }
+  }
+`;
+
 const listOrderTypeMasters = `
   query ListOrderTypeMasters {
     listOrderTypeMasters {
@@ -66,13 +73,13 @@ const listShopMasters = `
   }
 `;
 
-// --- 型定義 ---
 interface OrderTypeMaster { id: string; name: string; sort?: number | null; disabled?: boolean | null; }
 interface AcquireTypeMaster { id: string; name: string; sort?: number | null; disabled?: boolean | null; }
 interface WorkTypeMaster { id: string; name: string; sort?: number | null; disabled?: boolean | null; }
 interface ShopMaster { id: string; name: string; sort?: number | null; disabled?: boolean | null; }
 
 interface BukkenForm {
+  bukkenNo: number | '';
   orderType: string;
   acceptedDate: string;
   acquireType: string;
@@ -109,6 +116,7 @@ interface Props {
 }
 
 const initialForm: BukkenForm = {
+  bukkenNo: '',
   orderType: '',
   acceptedDate: '',
   acquireType: '',
@@ -130,8 +138,8 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
   const [acquireTypes, setAcquireTypes] = useState<AcquireTypeMaster[]>([]);
   const [workTypes, setWorkTypes] = useState<WorkTypeMaster[]>([]);
   const [shops, setShops] = useState<ShopMaster[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
 
-  // 一覧取得
   const fetchBukkens = async () => {
     const resp = await fetch(APPSYNC_ENDPOINT, {
       method: 'POST',
@@ -142,10 +150,9 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
       }),
     });
     const json = await resp.json();
-    setBukkens(json.data?.bukkensByCustomer?.items || []);
+    setBukkens(json.data?.bukkensByCustomerId?.items || []);
   };
 
-  // マスター取得
   const fetchOrderTypes = async () => {
     const resp = await fetch(APPSYNC_ENDPOINT, {
       method: 'POST',
@@ -161,7 +168,6 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
     });
     setOrderTypes(list);
   };
-
   const fetchAcquireTypes = async () => {
     const resp = await fetch(APPSYNC_ENDPOINT, {
       method: 'POST',
@@ -177,7 +183,6 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
     });
     setAcquireTypes(list);
   };
-
   const fetchWorkTypes = async () => {
     const resp = await fetch(APPSYNC_ENDPOINT, {
       method: 'POST',
@@ -193,7 +198,6 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
     });
     setWorkTypes(list);
   };
-
   const fetchShops = async () => {
     const resp = await fetch(APPSYNC_ENDPOINT, {
       method: 'POST',
@@ -210,19 +214,27 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
     setShops(list);
   };
 
-  // useEffect
   useEffect(() => {
     if (customerId) fetchBukkens();
   }, [customerId]);
   useEffect(() => { fetchOrderTypes(); fetchAcquireTypes(); fetchWorkTypes(); fetchShops(); }, []);
 
+  // 入力欄変更
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "number" || name === "bukkenNo" ? Number(value) : value
+    }));
   };
 
+  // 新規登録
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.bukkenNo) {
+      alert("物件NOは必須です");
+      return;
+    }
     await fetch(APPSYNC_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': APPSYNC_API_KEY },
@@ -231,6 +243,27 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
         variables: { input: { ...form, customerId } },
       }),
     });
+    setForm(initialForm);
+    fetchBukkens();
+  };
+
+  // 更新処理
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editId) return;
+    if (!form.bukkenNo) {
+      alert("物件NOは必須です");
+      return;
+    }
+    await fetch(APPSYNC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': APPSYNC_API_KEY },
+      body: JSON.stringify({
+        query: updateBukken,
+        variables: { input: { id: editId, customerId, ...form } },
+      }),
+    });
+    setEditId(null);
     setForm(initialForm);
     fetchBukkens();
   };
@@ -245,6 +278,7 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
             <th>受注区分</th>
             <th>受付日</th>
             <th>担当者</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -254,12 +288,38 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
               <td>{b.orderType}</td>
               <td>{b.acceptedDate}</td>
               <td>{b.supervisor}</td>
+              <td>
+                <button type="button" onClick={() => {
+                  setEditId(b.id);
+                  setForm({
+                    bukkenNo: b.bukkenNo ?? '',
+                    orderType: b.orderType || '',
+                    acceptedDate: b.acceptedDate || '',
+                    acquireType: b.acquireType || '',
+                    workType: b.workType || '',
+                    workTitle: b.workTitle || '',
+                    workZip: b.workZip || '',
+                    workAddress: b.workAddress || '',
+                    shop: b.shop || '',
+                    sales: b.sales || '',
+                    designer: b.designer || '',
+                    supervisor: b.supervisor || '',
+                    memo: b.memo || '',
+                  });
+                }}>
+                  修正
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <h3>新規物件登録</h3>
-      <form onSubmit={handleSubmit}>
+      <h3>{editId ? "物件情報修正" : "新規物件登録"}</h3>
+      <form onSubmit={editId ? handleUpdate : handleSubmit}>
+        <div>
+          <label>物件NO</label>
+          <input name="bukkenNo" type="number" value={form.bukkenNo ?? ''} onChange={handleChange} required />
+        </div>
         <div>
           <label>受注区分</label>
           <select name="orderType" value={form.orderType} onChange={handleChange} required>
@@ -328,7 +388,13 @@ const BukkenList: React.FC<Props> = ({ customerId }) => {
           <label>備考</label>
           <textarea name="memo" value={form.memo} onChange={handleChange} />
         </div>
-        <button type="submit">登録</button>
+        <button type="submit">{editId ? "更新" : "登録"}</button>
+        {editId && (
+          <button type="button" onClick={() => {
+            setEditId(null);
+            setForm(initialForm);
+          }}>キャンセル</button>
+        )}
       </form>
     </div>
   );
