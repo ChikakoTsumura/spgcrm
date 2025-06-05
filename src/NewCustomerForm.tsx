@@ -1,5 +1,28 @@
 import React, { useState } from 'react';
-import { createCustomer } from './graphql/mutations';
+
+// ここにAppSyncのエンドポイントURL
+const APPSYNC_ENDPOINT = 'https://55d7mvotbfb4ldlwsrknxsnmci.appsync-api.ap-northeast-1.amazonaws.com/graphql';
+// ここにAPIキー
+const APPSYNC_API_KEY = 'da2-7oig6dbgezb7tl4pxd62gne7oe';
+
+const createCustomer = `
+  mutation CreateCustomer($input: CreateCustomerInput!) {
+    createCustomer(input: $input) {
+      id
+      name
+      nameKana
+      zip
+      address
+      phone
+      fax
+      mobile1
+      mobile2
+      email1
+      email2
+      memo
+    }
+  }
+`;
 
 interface CustomerForm {
   name: string;
@@ -40,9 +63,12 @@ const NewCustomerForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('/graphql', {
+      await fetch(APPSYNC_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': APPSYNC_API_KEY,
+        },
         body: JSON.stringify({
           query: createCustomer,
           variables: { input: form },

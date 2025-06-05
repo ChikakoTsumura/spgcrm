@@ -14,6 +14,9 @@
     "categories": {
       "api": {
         "spgcrm": {}
+      },
+      "auth": {
+        "spgcrm9e138e5c": {}
       }
     }
   }

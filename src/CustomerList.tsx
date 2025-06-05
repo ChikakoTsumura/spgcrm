@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-// ここにAppSyncのエンドポイントURL（あなたの場合は↓このURL）
+// AppSyncエンドポイント、APIキー（ここはあなたの値を使う）
 const APPSYNC_ENDPOINT = 'https://55d7mvotbfb4ldlwsrknxsnmci.appsync-api.ap-northeast-1.amazonaws.com/graphql';
-// ここにAPIキーを貼り付け（例: 'da2-xxxxxxxxxxxxxxxxxxxxxxxxxx'）
 const APPSYNC_API_KEY = 'da2-7oig6dbgezb7tl4pxd62gne7oe';
 
 // GraphQLクエリ
@@ -12,15 +12,10 @@ const listCustomers = `
       items {
         id
         name
-        nameKana
         zip
         address
         phone
-        fax
         mobile1
-        mobile2
-        email1
-        email2
         memo
       }
     }
@@ -30,22 +25,19 @@ const listCustomers = `
 interface Customer {
   id: string;
   name: string;
-  nameKana: string;
   zip?: string | null;
   address?: string | null;
   phone?: string | null;
-  fax?: string | null;
   mobile1?: string | null;
-  mobile2?: string | null;
-  email1?: string | null;
-  email2?: string | null;
   memo?: string | null;
 }
 
 const CustomerList: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
+  // 一覧取得
   const fetchCustomers = async () => {
     setLoading(true);
     try {
@@ -76,6 +68,12 @@ const CustomerList: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
+  // 修正ボタンのクリック時
+  const handleEdit = (id: string) => {
+    // /update/顧客ID というURLに遷移させる
+    navigate(`/update/${id}`);
+  };
+
   return (
     <div>
       <h1>顧客一覧</h1>
@@ -85,21 +83,29 @@ const CustomerList: React.FC = () => {
       <table>
         <thead>
           <tr>
-            <th>ID</th>
             <th>顧客名</th>
-            <th>フリガナ</th>
-            <th>電話番号</th>
-            <th>メール1</th>
+            <th>郵便番号</th>
+            <th>住所</th>
+            <th>電話1</th>
+            <th>携帯電話1</th>
+            <th>備考</th>
+            <th>修正</th>
           </tr>
         </thead>
         <tbody>
           {customers.map((c) => (
             <tr key={c.id}>
-              <td>{c.id}</td>
               <td>{c.name}</td>
-              <td>{c.nameKana}</td>
+              <td>{c.zip}</td>
+              <td>{c.address}</td>
               <td>{c.phone}</td>
-              <td>{c.email1}</td>
+              <td>{c.mobile1}</td>
+              <td>{c.memo}</td>
+              <td>
+                <button type="button" onClick={() => handleEdit(c.id)}>
+                  修正
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

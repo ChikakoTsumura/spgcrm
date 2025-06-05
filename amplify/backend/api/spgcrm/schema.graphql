@@ -1,18 +1,66 @@
-# This "input" configures a global authorization rule to enable public access to
-# all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
 input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
 
 type Customer @model {
-  id: ID!                # 顧客NO（自動採番）
-  name: String!          # 顧客名
-  nameKana: String!      # フリガナ
-  zip: String            # 郵便番号
-  address: String        # 住所
-  phone: String          # 電話番号
-  fax: String            # FAX番号
-  mobile1: String        # 携帯番号１
-  mobile2: String        # 携帯番号２
-  email1: String         # メール１
-  email2: String         # メール２
-  memo: String           # 備考
+  id: ID!
+  name: String!
+  nameKana: String!
+  zip: String
+  address: String
+  phone: String
+  fax: String
+  mobile1: String
+  mobile2: String
+  email1: String
+  email2: String
+  memo: String
+  bukkenList: [Bukken] @hasMany(indexName: "byCustomer", fields: ["id"])
 }
+
+type Bukken @model {
+  id: ID!
+  bukkenNo: Int!
+  customerId: ID! @index(name: "byCustomer") 
+  orderType: String
+  acceptedDate: AWSDate
+  acquireType: String
+  workType: String
+  workTitle: String
+  workZip: String
+  workAddress: String
+  shop: String
+  sales: String
+  designer: String
+  supervisor: String
+  memo: String
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+}
+
+type OrderTypeMaster @model {
+  id: ID!
+  name: String!
+  sort: Int
+  disabled: Boolean
+}
+
+type AcquireTypeMaster @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+  sort: Int
+  disabled: Boolean
+}
+
+type WorkTypeMaster @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+  sort: Int
+  disabled: Boolean
+}
+
+type ShopMaster @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+  sort: Int
+  disabled: Boolean
+}
+
